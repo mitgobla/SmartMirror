@@ -6,7 +6,7 @@ import re
 
 class News(QtCore.QObject):
     """News articles using RSS
-    
+
     Returns:
         list -- List containing self.headline_count number of news dict
     """
@@ -15,22 +15,22 @@ class News(QtCore.QObject):
     current_headlines = QtCore.pyqtSignal(list)
 
     def __init__(self):
-        super(QtCore.QObject, self).__init__()
+        super().__init__()
 
         self.news_sources = ['https://www.nbcnewyork.com/news/tech/?rss=y']
-        self.headline_count = 5
+        self.headline_count = 3
         self.update_time = 900 # 15 minutes recommended (900)
         self.duplicates = True
 
     def add_source(self, source : str):
         """Add an RSS feed to the widget
-        
+
         Arguments:
             source {str} -- RSS URL
         """
 
         self.news_sources.append(source)
-    
+
     @staticmethod
     def clean_html(raw):
         cleanr = re.compile('<.*?>')
@@ -53,13 +53,23 @@ class News(QtCore.QObject):
             for source in selected_sources:
                 data = feedparser.parse(source)
                 entry = data.entries[randint(0, len(data.entries)-1)]
-                content = {
-                    "source": data.feed.title,
-                    "title": entry.title,
-                    "summary": entry.summary,
-                    "author": entry.author,
-                    "content": self.clean_html(entry.content[0]["value"])
-                }
+                try:
+                    content = {
+                        "source": data.feed.title,
+                        "title": entry.title,
+                        "summary": entry.summary,
+                        "author": entry.author,
+                        "content": self.clean_html(entry.content[0]["value"])
+                    }
+                except AttributeError:
+                    content = {
+                        "source": data.feed.title,
+                        "title": entry.title,
+                        "summary": entry.summary,
+                        "author": entry.author,
+                        "content": "N/A"
+                    }
+
                 updated_headlines.append(content)
             self.current_headlines.emit(updated_headlines)
             sleep(self.update_time)
